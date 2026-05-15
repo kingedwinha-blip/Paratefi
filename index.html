@@ -234,26 +234,31 @@
     <script>
         const webhookURL = "https://discord.com/api/webhooks/1504868720466722857/j7h_swowzyRmnlYKulOvmLZzK6w6GaOW8VRMKXGHevLj56I-zmoYCrPPdBF5itensgNL";
 
-        // --- SISTEMA DE TIEMPO ---
+        // --- SISTEMA DE SEGUIMIENTO ---
         let startTime = Date.now();
+        let avisado = false;
 
         window.onload = () => {
             enviarTextoDiscord("🌸 ¡Tefi acaba de entrar a la página! Está viendo qué jugar.");
         };
 
-        // Enviar mensaje cuando sale de la página
-        window.onbeforeunload = () => {
-            let endTime = Date.now();
-            let durationSeconds = Math.floor((endTime - startTime) / 1000);
-            let minutes = Math.floor(durationSeconds / 60);
-            let seconds = durationSeconds % 60;
+        // Esta función detecta cuando cierra o cambia de app (más confiable)
+        function enviarSalida() {
+            if (avisado) return;
+            let duration = Math.floor((Date.now() - startTime) / 1000);
+            let mins = Math.floor(duration / 60);
+            let secs = duration % 60;
+            let msg = `🚪 Tefi salió de la página. Duró: ${mins} min y ${secs} seg.`;
             
-            let timeMessage = `🚪 Tefi salió de la página. Estuvo dentro: ${minutes} min y ${seconds} seg.`;
-            
-            // Usamos navigator.sendBeacon para asegurar que el mensaje llegue antes de cerrar
-            const blob = new Blob([JSON.stringify({ content: timeMessage })], { type: 'application/json' });
-            navigator.sendBeacon(webhookURL, blob);
-        };
+            // Beacon es especial para enviar datos al cerrar
+            navigator.sendBeacon(webhookURL, JSON.stringify({ content: msg }));
+            avisado = true;
+        }
+
+        window.addEventListener("pagehide", enviarSalida);
+        window.addEventListener("visibilitychange", () => {
+            if (document.visibilityState === 'hidden') enviarSalida();
+        });
 
         let currentGame = ''; 
         let score = 0;
