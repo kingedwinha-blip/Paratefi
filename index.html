@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Para La Mejor Tefi</title>
+    <style>
+        body {
+            background-color: #1a1a1a;
+            color: white;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            margin: 0;
+            user-select: none;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* --- PANTALLA DE SELECCIÓN --- */
+        #intro-screen {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: linear-gradient(45deg, #2a0845, #1a1a1a);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+            text-align: center;
+            transition: transform 0.8s cubic-bezier(0.77, 0, 0.175, 1);
+        }
+
+        .welcome-card {
+            background: rgba(0, 0, 0, 0.95);
+            padding: 30px;
+            border-radius: 25px;
+            border: 4px solid #ff00ff;
+            box-shadow: 0 0 20px #ff00ff;
+            max-width: 85%;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        /* --- SECCIÓN FOTO --- */
+        #photo-area {
+            margin-top: 20px;
+            border-top: 1px dashed #ff00ff;
+            padding-top: 15px;
+        }
+        #preview-img {
+            width: 120px; height: 120px;
+            object-fit: cover;
+            border-radius: 15px;
+            border: 3px solid #00ffff;
+            display: none;
+            margin: 10px auto;
+            box-shadow: 0 0 15px #00ffff;
+        }
+
+        /* --- CONTENEDOR CON ANIMACIÓN GIRATORIA --- */
+        .piropo-animated-border {
+            position: relative;
+            margin-top: 15px;
+            padding: 3px; /* Espacio para el borde */
+            background: linear-gradient(90deg, #ff00ff, #00ffff, #ff00ff, #00ffff);
+            background-size: 400% 400%;
+            border-radius: 12px;
+            animation: rotateBorder 3s linear infinite;
+            display: none; /* Se activa por JS */
+        }
+
+        @keyframes rotateBorder {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+        }
+
+        #footer-piropo {
+            background-color: #1a1a1a;
+            color: #ff69b4;
+            font-size: 0.9rem;
+            font-style: italic;
+            padding: 10px;
+            border-radius: 10px;
+            min-height: 1.2em;
+            margin: 0;
+        }
+
+        .file-label {
+            background: #333; color: #00ffff;
+            padding: 10px; border-radius: 10px;
+            border: 2px solid #00ffff; cursor: pointer;
+            font-weight: bold; display: inline-block;
+            transition: 0.3s;
+        }
+
+        /* --- OVERLAY PIROPOS --- */
+        #piropo-overlay {
+            display: none;
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%); 
+            background: rgba(0, 0, 0, 0.98);
+            padding: 30px;
+            border-radius: 20px;
+            border: 5px solid #00ffff;
+            box-shadow: 0 0 40px #00ffff;
+            z-index: 500;
+            text-align: center;
+            width: 80%;
+            animation: popIn 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            from { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            to { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        /* --- ESTILOS DE JUEGO --- */
+        #game-grid { display: none; grid-template-columns: repeat(4, 1fr); gap: 8px; padding: 10px; background: #222; border-radius: 15px; border: 2px solid #00ffff; }
+        .card { width: 65px; height: 65px; background: #333; border-radius: 10px; display: flex; justify-content: center; align-items: center; font-size: 28px; cursor: pointer; border: 1px solid #444; }
+        .card.flipped { background: #444; border-color: #ff00ff; color: white; }
+
+        #game-container { display: none; position: relative; width: 300px; height: 380px; background-color: #222; border: 4px solid #fff; border-radius: 10px; overflow: hidden; transition: background-color 0.8s ease; }
+        
+        .road-line { position: absolute; left: 50%; transform: translateX(-50%); width: 8px; height: 60px; background-color: white; opacity: 0.6; }
+        #player { position: absolute; bottom: 20px; left: 132px; width: 35px; height: 65px; background-color: #ff69b4; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-size: 28px; box-shadow: 0 0 15px #ff69b4; transition: left 0.1s; z-index: 10; }
+        .jumping { transform: scale(1.4) translateY(-50px); box-shadow: 0 20px 30px rgba(0,0,0,0.6), 0 0 20px #00ffff; }
+
+        .enemy { position: absolute; width: 35px; height: 65px; border-radius: 6px; display: flex; justify-content: center; align-items: center; font-size: 28px; background: #444; }
+
+        .opt-btn { padding: 12px; border-radius: 15px; border: none; font-weight: bold; cursor: pointer; width: 100%; transition: 0.3s; margin-bottom: 8px; }
+        .header { margin: 10px; padding: 10px; border: 4px solid #ff00ff; border-radius: 15px; animation: borderGlow 2s infinite alternate; }
+        @keyframes borderGlow { from { box-shadow: 0 0 10px #ff00ff; } to { box-shadow: 0 0 25px #00ffff; border-color: #00ffff; } }
+
+        #game-over-card { display: none; position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); background: rgba(0,0,0,0.98); padding: 25px; border-radius: 20px; border: 4px solid #ff00ff; z-index: 400; text-align: center; width: 80%; }
+        .touch-controls { display: none; gap: 30px; margin: 15px; }
+        .arrow-btn { width: 70px; height: 70px; background: #444; border: 3px solid #00ffff; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-size: 30px; }
+        
+        #status-bar { text-align: center; width: 100%; font-size: 1.2rem; text-shadow: 0 0 5px currentColor; }
+
+        /* --- PIROPO FLOTANTE --- */
+        #floating-piropo-container {
+            display: none;
+            position: absolute;
+            width: 80%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: rgba(0, 0, 0, 0.95);
+            color: #00ffff;
+            border: 3px solid #ff00ff;
+            border-radius: 15px;
+            padding: 15px;
+            text-align: center;
+            z-index: 100;
+            box-shadow: 0 0 20px #ff00ff;
+        }
+
+        .cancel-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 8px;
+            margin-top: 10px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="piropo-overlay">
+        <h3 style="color: #00ffff; margin: 0;">¡ATENCIÓN TEFI! 💎</h3>
+        <p id="piropo-text" style="color: #ff69b4; font-style: italic; font-size: 1.1rem; margin: 15px 0;"></p>
+        <button class="opt-btn" style="background: #ff4500; color: white;" onclick="closePiropo()">CONTINUAR</button>
+    </div>
+
+    <div id="game-over-card">
+        <h2 id="go-title" style="color: #ff00ff;">FIN DEL JUEGO</h2>
+        <p id="go-msg" style="font-style: italic; color: #00ffff; margin-bottom: 20px;"></p>
+        <button class="opt-btn" style="background: #00ff00;" onclick="restartCurrentGame()">REINTENTAR</button>
+        <button class="opt-btn" style="background: #444; color: white;" onclick="goHome()">VOLVER AL INICIO</button>
+    </div>
+
+    <div id="intro-screen">
+        <div class="welcome-card">
+            <h1 style="color: #ff69b4; text-shadow: 0 0 10px #ff00ff; margin-bottom: 20px;">🌸 HOLA TEFI 🌸</h1>
+            
+            <button class="opt-btn" style="background: #00ffff; color: black;" onclick="showMemory()">💎 JUEGO DE MEMORIA</button>
+            <button class="opt-btn" style="background: #ff69b4; color: white;" onclick="startCarGame('relax')">🚗 MODO RELAX</button>
+            <button class="opt-btn" style="background: #ff4500; color: white;" onclick="startCarGame('furia')">🔥 MODO FURIA</button>
+
+            <div id="photo-area">
+                <p style="color: #bbb; font-size: 0.8rem; margin-bottom: 10px;">Pon tu foto aquí, hermosa</p>
+                <label class="file-label" for="file-input">📸 SUBIR MI FOTO</label>
+                <input type="file" id="file-input" style="display:none" accept="image/*" onchange="loadPhoto(event)">
+                <center>
+                    <img id="preview-img" src="">
+                    <div id="piropo-wrapper" class="piropo-animated-border">
+                        <p id="footer-piropo"></p>
+                    </div>
+                </center>
+            </div>
+        </div>
+    </div>
+
+    <div class="header">
+        <h2 id="ui-title" style="margin:0; font-size: 1rem;">Para Tefi con amor</h2>
+    </div>
+
+    <div id="status-bar" style="margin-bottom: 10px; color: #00ffff; font-weight: bold;">Puntaje: 0</div>
+
+    <div id="game-grid"></div>
+    
+    <div id="game-container">
+        <div id="player" onclick="jump()">🏎️</div>
+        <!-- Piropo Flotante con botón -->
+        <div id="floating-piropo-container">
+            <p id="float-text" style="margin: 0; font-size: 0.9rem;"></p>
+            <button class="cancel-btn" onclick="resumeAfterPiropo()">CERRAR ✖</button>
+        </div>
+    </div>
+
+    <div class="touch-controls" id="car-controls">
+        <div class="arrow-btn" onclick="moveLeft()">⬅️</div>
+        <div class="arrow-btn" onclick="moveRight()">➡️</div>
+    </div>
+
+    <button class="opt-btn" id="btn-home-manual" style="display:none; width: auto; padding: 5px 20px; background: #333; color: #ff00ff; border: 1px solid #ff00ff;" onclick="goHome()">SALIR</button>
+
+    <script>
+        let currentGame = ''; 
+        let score = 0;
+        let gameActive = false;
+        let speed = 5;
+        let playerX = 132;
+        let isJumping = false;
+        let matchedPairs = 0;
+        let flippedCards = [];
+        let currentMode = 'relax';
+        
+        const piroposOriginales = [
+            "Tefi, hasta los mejores pilotos chocan, ¡pero ninguno es tan guapa como tú!",
+            "Esa memoria tuya es de nivel experto, pero ni con mil cartas olvidas lo hermosa que eres.",
+            "¡Cuidado con el tráfico! Aunque con esa sonrisa, cualquier camión se frenaría a verte.",
+            "Mucho juego de memoria, pero mi mente solo tiene guardada tu cara en HD.",
+            "Tefi, manejas el carrito mejor que yo mi vida, ¡qué nivel!",
+            "¿Encontraste el par? El único par perfecto aquí somos tú y la victoria.",
+            "Ese choque dolió, pero más duele ver lo linda que estás y no poder darte un premio.",
+            "Tefi, vas tan rápido en el juego que ya te pasaste la meta de mi corazón.",
+            "¡Vaya reflejos! Ni un choque te quita lo diosa que te ves jugando.",
+            "Si la memoria no me falla, en este nivel te toca ser la más guapa del mundo.",
+            "¿Modo Furia? Furia es la que me da por no poder jugar contigo todo el día.",
+            "Esos obstáculos son difíciles, pero no tanto como dejar de mirar tu foto.",
+            "¡Tefi ganaste! Bueno, todavía no, pero ya ganaste el premio a la mejor sonrisa del juego.",
+            "Ese carrito vuela, pero tú vuelas más alto con ese estilazo que te manejas.",
+            "Ni el récord más alto de este juego supera lo increíble que eres, Tefi.",
+            "¿Buscando parejas? No busques más, que la carta ganadora siempre eres tú.",
+            "¡Pisa el freno! Que con tanta belleza vas a causar un accidente en la pista.",
+            "Jugar contigo es como tener el truco de vidas infinitas: ¡siempre es divertido!",
+            "Tefi, ¡qué buena racha! Aunque tu mejor racha es estar así de preciosa todos los días.",
+            "¡Game Over! Pero no pasa nada, porque con una sonrisa tuya se reinicia mi mundo."
+        ];
+        
+        let piroposDisponibles = [...piroposOriginales];
+
+        function loadPhoto(event) {
+            const reader = new FileReader();
+            reader.onload = function(){
+                const output = document.getElementById('preview-img');
+                output.src = reader.result;
+                output.style.display = 'block';
+                showPiropo(); 
+            };
+            reader.readAsDataURL(event.target.files[0]);
+        }
+
+        function obtenerPiropo() {
+            if (piroposDisponibles.length === 0) piroposDisponibles = [...piroposOriginales];
+            const index = Math.floor(Math.random() * piroposDisponibles.length);
+            return piroposDisponibles.splice(index, 1)[0];
+        }
+
+        function showPiropo() {
+            const piropo = obtenerPiropo();
+            document.getElementById('piropo-text').innerText = piropo;
+            document.getElementById('piropo-overlay').style.display = 'block';
+            window.lastPiropo = piropo;
+        }
+
+        function closePiropo() { 
+            document.getElementById('piropo-overlay').style.display = 'none'; 
+            document.getElementById('footer-piropo').innerText = window.lastPiropo || "";
+            document.getElementById('piropo-wrapper').style.display = 'block';
+        }
+
+        function showMemory() {
+            currentGame = 'memory';
+            document.getElementById('intro-screen').style.transform = 'translateY(-100%)';
+            document.getElementById('game-grid').style.display = 'grid';
+            document.getElementById('game-container').style.display = 'none';
+            document.getElementById('car-controls').style.display = 'none';
+            document.getElementById('ui-title').innerText = "Encuentra los Pares 💎";
+            document.getElementById('btn-home-manual').style.display = 'block';
+            resetMemory();
+        }
+
+        function resetMemory() {
+            matchedPairs = 0;
+            flippedCards = [];
+            document.getElementById('status-bar').innerText = "Parejas: 0 / 8";
+            document.getElementById('status-bar').style.color = "#00ffff";
+            const icons = ['💎', '👻', '😎', '🌸', '🔥', '👑', '💖', '⭐'];
+            let cards = [...icons, ...icons].sort(() => Math.random() - 0.5);
+            const grid = document.getElementById('game-grid');
+            grid.innerHTML = '';
+            cards.forEach(icon => {
+                const card = document.createElement('div');
+                card.classList.add('card');
+                card.dataset.icon = icon;
+                card.innerHTML = '?';
+                card.onclick = function() {
+                    if(flippedCards.length < 2 && !this.classList.contains('flipped')) {
+                        this.classList.add('flipped');
+                        this.innerHTML = this.dataset.icon;
+                        flippedCards.push(this);
+                        if(flippedCards.length === 2) checkMatch();
+                    }
+                };
+                grid.appendChild(card);
+            });
+        }
+
+        function checkMatch() {
+            const [c1, c2] = flippedCards;
+            if(c1.dataset.icon === c2.dataset.icon) {
+                matchedPairs++;
+                document.getElementById('status-bar').innerText = `Parejas: ${matchedPairs} / 8`;
+                setTimeout(showPiropo, 300);
+                flippedCards = [];
+                if(matchedPairs === 8) {
+                    setTimeout(() => showGameOver("¡ERES UNA GENIA!", "Completaste el desafío de memoria."), 1000);
+                }
+            } else {
+                setTimeout(() => {
+                    c1.classList.remove('flipped'); c2.classList.remove('flipped');
+                    c1.innerHTML = '?'; c2.innerHTML = '?';
+                    flippedCards = [];
+                }, 800);
+            }
+        }
+
+        function startCarGame(mode) {
+            currentMode = mode;
+            currentGame = 'car'; gameActive = true; score = 0;
+            speed = (mode === 'relax') ? 4 : 9;
+            document.getElementById('intro-screen').style.transform = 'translateY(-100%)';
+            document.getElementById('game-grid').style.display = 'none';
+            document.getElementById('game-container').style.display = 'block';
+            document.getElementById('game-container').style.backgroundColor = '#222';
+            document.getElementById('car-controls').style.display = 'flex';
+            document.getElementById('btn-home-manual').style.display = 'block';
+            document.getElementById('ui-title').innerText = "Corriendo por Tefi 🏎️";
+            updateCarScore();
+            
+            startIntervals();
+        }
+
+        function startIntervals() {
+            window.carInt = setInterval(createEnemy, currentMode === 'furia' ? 700 : 1200);
+            window.lineInt = setInterval(createLines, 400);
+        }
+
+        function stopIntervals() {
+            clearInterval(window.carInt);
+            clearInterval(window.lineInt);
+        }
+
+        function updateCarScore() {
+            const bar = document.getElementById('status-bar');
+            const container = document.getElementById('game-container');
+            bar.innerText = "Distancia: " + score + "m";
+            
+            // Pausa y piropo cada 10 metros
+            if (score > 0 && score % 10 === 0) {
+                const randomHue = Math.floor(Math.random() * 360);
+                container.style.backgroundColor = `hsl(${randomHue}, 40%, 20%)`;
+                
+                // Detener el juego
+                gameActive = false;
+                stopIntervals();
+                
+                // Mostrar Piropo con botón cerrar
+                document.getElementById('float-text').innerText = obtenerPiropo();
+                document.getElementById('floating-piropo-container').style.display = 'block';
+            }
+
+            if (score < 40) bar.style.color = "#00ffff";
+            else if (score < 100) bar.style.color = "#ffff00";
+            else if (score < 200) bar.style.color = "#ff8800";
+            else bar.style.color = "#ff0000";
+            
+            if (score > 0 && score % 40 === 0) speed += 0.15;
+        }
+
+        function resumeAfterPiropo() {
+            document.getElementById('floating-piropo-container').style.display = 'none';
+            gameActive = true;
+            // Un pequeño truco para evitar que se pause infinitamente en el mismo metro
+            score++; 
+            updateCarScore();
+            startIntervals();
+        }
+
+        function createEnemy() {
+            if(!gameActive) return;
+            const enemy = document.createElement('div');
+            enemy.className = 'enemy';
+            enemy.innerHTML = Math.random() > 0.7 ? "🚛" : "🚖";
+            enemy.style.left = Math.floor(Math.random()*260) + 'px';
+            enemy.style.top = '-100px';
+            document.getElementById('game-container').appendChild(enemy);
+            let pos = -100;
+            let moveInt = setInterval(() => {
+                if(!gameActive) { clearInterval(moveInt); enemy.remove(); return; }
+                pos += speed;
+                enemy.style.top = pos + 'px';
+                if(!isJumping && pos > 240 && pos < 310) {
+                    let ex = parseInt(enemy.style.left);
+                    if(ex < playerX + 35 && ex + 35 > playerX) {
+                        gameActive = false;
+                        showGameOver("¡CHOCASTE!", obtenerPiropo());
+                    }
+                }
+                if(pos > 400) { clearInterval(moveInt); enemy.remove(); }
+            }, 20);
+        }
+
+        function createLines() {
+            if(!gameActive) return;
+            const line = document.createElement('div');
+            line.className = 'road-line';
+            line.style.top = '-80px';
+            document.getElementById('game-container').appendChild(line);
+            let pos = -80;
+            let moveLine = setInterval(() => {
+                if(!gameActive) { clearInterval(moveLine); line.remove(); return; }
+                pos += speed;
+                line.style.top = pos + 'px';
+                if(pos > 400) {
+                    clearInterval(moveLine); line.remove();
+                    score++;
+                    updateCarScore();
+                }
+            }, 20);
+        }
+
+        function jump() {
+            if(isJumping) return;
+            isJumping = true;
+            document.getElementById('player').classList.add('jumping');
+            setTimeout(() => { document.getElementById('player').classList.remove('jumping'); isJumping = false; }, 600);
+        }
+        function moveLeft() { if(playerX > 10) { playerX -= 40; document.getElementById('player').style.left = playerX + 'px'; } }
+        function moveRight() { if(playerX < 250) { playerX += 40; document.getElementById('player').style.left = playerX + 'px'; } }
+
+        function showGameOver(title, msg) {
+            gameActive = false;
+            stopIntervals();
+            document.getElementById('go-title').innerText = title;
+            document.getElementById('go-msg').innerText = msg;
+            document.getElementById('game-over-card').style.display = 'block';
+        }
+
+        function restartCurrentGame() {
+            document.getElementById('game-over-card').style.display = 'none';
+            if(currentGame === 'memory') resetMemory(); 
+            else startCarGame(currentMode);
+        }
+
+        function goHome() {
+            gameActive = false;
+            stopIntervals();
+            document.getElementById('game-over-card').style.display = 'none';
+            document.getElementById('piropo-overlay').style.display = 'none';
+            document.getElementById('floating-piropo-container').style.display = 'none';
+            document.getElementById('intro-screen').style.transform = 'translateY(0)';
+            document.getElementById('btn-home-manual').style.display = 'none';
+            
+            if(document.getElementById('preview-img').style.display === 'block') {
+                document.getElementById('footer-piropo').innerText = obtenerPiropo();
+                document.getElementById('piropo-wrapper').style.display = 'block';
+            }
+        }
+    </script>
+</body>
+</html>
